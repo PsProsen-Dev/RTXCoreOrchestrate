@@ -14,18 +14,40 @@ class RTXSafetyLayer {
   // ─── PATTERN REGISTRY ────────────────────────────────────────────────────────
 
   static DESTRUCTIVE_PATTERNS = [
-    // Filesystem Attacks
+    // ── Filesystem Attacks ──
     'rm -rf', 'del /s /q', 'format c:', 'rmdir /s',
     'remove-item -recurse -force /',
-    // Permission Escalation
+    // ── Permission Escalation ──
     'chmod 777', 'icacls * /grant everyone:f',
-    // Network / Reverse Shell Exploits
+    // ── Network / Reverse Shell Exploits ──
     'nc -e', 'bash -i', '/dev/tcp/', 'ncat --exec',
-    'curl | bash', 'wget -O- | sh',
-    // DB Nukes
+    'curl | bash', 'wget -o- | sh',
+    // ── DB Nukes ──
     'drop table', 'drop database', 'truncate table',
-    // Git Force Destruction
+    // ── Git Force Destruction ──
     'git push --force origin main', 'git push -f origin master',
+    // ── Windows PowerShell Bypass (Antigravity 2.0 contribution) ──
+    '-executionpolicy bypass', '-ep bypass', '-exc byp',
+    '-noprofile', '-nop',
+    '-encodedcommand', '-enc ',
+    'powershell -w hidden', 'powershell -windowstyle hidden',
+    // ── Registry Manipulation ──
+    'reg add', 'reg delete', 'reg save',
+    'set-itemproperty', 'remove-itemproperty', 'new-itemproperty',
+    'hklm:', 'hkcu:', 'hkcr:', 'registry::',
+    // ── WMI / CIM Attacks ──
+    'wmic process call create', 'get-wmiobject', 'get-ciminstance',
+    'invoke-cimmethod', 'invoke-wmimethod',
+    // ── Environment Variable Injection ──
+    '$env:appdata', '$env:temp', '$env:comspec',
+    '[environment]::', '[system.io.path]::',
+    // ── Silent Network Downloads ──
+    'invoke-webrequest', 'invoke-restmethod',
+    'net.webclient', '.downloadfile(', '.downloadstring(',
+    'start-bitstransfer',
+    // ── System Kill Commands ──
+    'stop-process -force', 'kill -9', 'taskkill /f',
+    'shutdown /s /t 0', 'shutdown /r /t 0',
   ];
 
   static CREDENTIAL_PATTERNS = [

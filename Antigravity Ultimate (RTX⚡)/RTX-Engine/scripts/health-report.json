@@ -1,0 +1,50 @@
+{
+  "checkedAt": "2026-07-06T08:54:17.691Z",
+  "results": {
+    "claude_code": {
+      "available": false,
+      "version": null,
+      "error": "Command failed: claude --version 2>&1\nclaude : The term 'claude' is not recognized as the name of a cmdlet, function, script file, or operable program. \r\nCheck the spelling of the name, or if a path was included, verify that the path is correct and try again.\r\nAt line:1 char:1\r\n+ claude --version 2>&1\r\n+ ~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (claude:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException\r\n \r\n",
+      "cmd": "claude",
+      "description": "Anthropic Claude CLI — required for <role_thinker> tasks",
+      "required": false,
+      "mockMode": true
+    },
+    "gh_cli": {
+      "available": true,
+      "version": "gh version 2.93.0 (2026-05-27)",
+      "error": null,
+      "cmd": "gh",
+      "description": "GitHub CLI — required for repo/PR/deploy tasks",
+      "required": false,
+      "mockMode": false
+    },
+    "copilot_cli": {
+      "available": false,
+      "version": null,
+      "error": "Command failed: github-copilot-cli --version 2>&1\ngithub-copilot-cli : The term 'github-copilot-cli' is not recognized as the name of a cmdlet, function, script file, \r\nor operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and \r\ntry again.\r\nAt line:1 char:1\r\n+ github-copilot-cli --version 2>&1\r\n+ ~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (github-copilot-cli:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException\r\n \r\n",
+      "cmd": "github-copilot-cli",
+      "description": "GitHub Copilot CLI — required for <role_worker> code generation",
+      "required": false,
+      "mockMode": true
+    },
+    "node": {
+      "available": true,
+      "version": "v24.16.0",
+      "error": null,
+      "cmd": "node",
+      "description": "Node.js runtime — REQUIRED for RTX-Engine",
+      "required": true,
+      "mockMode": false
+    },
+    "git": {
+      "available": true,
+      "version": "git version 2.54.0.windows.1",
+      "error": null,
+      "cmd": "git",
+      "description": "Git — required for repository operations",
+      "required": false,
+      "mockMode": false
+    }
+  }
+}
