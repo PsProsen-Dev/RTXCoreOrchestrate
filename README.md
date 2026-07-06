@@ -202,12 +202,30 @@ Marlin-style research reports follow a strict **3-layer analytical structure**:
 
 ---
 
-## 📚 References
+## 📚 References & Fugu Research
 
-- [Sakana AI — Fugu Technical Report](https://arxiv.org/html/2606.21228v1)
-- [Sakana AI — Fugu Product Page](https://sakana.ai/fugu)
-- [Sakana AI — Marlin Strategic Intelligence](https://sakana.ai/marlin)
-- [Sakana AI — AB-MCTS](https://sakana.ai/ab-mcts)
+### Technical Papers
+- [Sakana Fugu Technical Report](https://arxiv.org/abs/2606.21228) - Multi-Agent System as a Model
+- [TRINITY Paper](https://arxiv.org/abs/2512.04695) - Evolved Model Coordination
+- [Conductor Paper](https://arxiv.org/abs/2512.04388) - RL-Trained Orchestrator
+
+### Official Resources
+- [Sakana Fugu Official Page](https://sakana.ai/fugu)
+- [Sakana AI Blog](https://sakana.ai/blog/)
+- [Marlin Strategic Intelligence](https://sakana.ai/marlin)
+- [AB-MCTS](https://sakana.ai/ab-mcts)
+
+### Tech Blogs & Articles
+- [VentureBeat: Fugu Launch](https://venturebeat.com/orchestration/no-claude-fable-5-no-problem-sakana-achieves-frontier-performance-with-new-fugu-multi-model-auto-synthesis-system)
+- [AyAutomate: What is Sakana Fugu?](https://www.ayautomate.com/blog/what-is-sakana-fugu)
+- [MarkTechPost: Fugu Orchestration Model](https://www.marktechpost.com/2026/06/22/sakana-ai-launches-sakana-fugu-an-orchestration-model-that-routes-tasks-across-a-swappable-pool-of-frontier-llms)
+- [MindStudio: Multi-Agent AI System](https://www.mindstudio.ai/blog/what-is-sakana-fugu-multi-agent-ai)
+- [Paddo.dev: Critical Analysis of Fugu](https://paddo.dev/blog/sakana-fugu-orchestration-model)
+
+### Community Discussions
+- [Reddit: r/ClaudeAI on Fugu](https://www.reddit.com/r/ClaudeAI/comments/1ud87za/sakana_ais_fugu_from_a_claude_users_view)
+- [LinkedIn: Fugu Release Discussion](https://www.linkedin.com/posts/robert-tjarko-lange-19539a12a_stoked-for-sakana-ai-fugu-model-release-activity-7474763421641723904-wUOb)
+- [X: Fugu Ultra Benchmarks](https://x.com/rohanpaul_ai/status/2068909919873757456)
 
 ---
 
