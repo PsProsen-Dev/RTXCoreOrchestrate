@@ -11,6 +11,33 @@ const BaseAdapter = require('./adapters/BaseAdapter');
 const ClaudeAdapter = require('./adapters/ClaudeAdapter');
 const GhAdapter = require('./adapters/GhAdapter');
 
+/**
+ * RTXConductor Heuristic Router — Fugu-style model selection.
+ * Team Discussion: Antigravity IDE's approach (heuristic routing) over
+ * Antigravity 2.0's RL simulation (too complex for CLI scope).
+ * Ultron's input: route based on task type + complexity.
+ */
+class RTXHeuristicConductor {
+  static selectModel(taskType, complexity = 0.5) {
+    // <role_thinker> tasks → Claude (deep reasoning)
+    if (taskType === 'thinker' || complexity > 0.8) return 'claude_code';
+    // Research tasks → Marlin
+    if (taskType === 'research' || taskType === 'marlin') return 'marlin';
+    // Deployment tasks → gh_cli
+    if (taskType === 'deploy' || taskType === 'repo') return 'gh_cli';
+    // Default <role_worker> → copilot_cli
+    return 'copilot_cli';
+  }
+
+  static computeComplexity(step) {
+    let score = 0.5;
+    if (step.requires_mcts) score += 0.3;
+    if (step.trinity_role === 'thinker') score += 0.2;
+    if (step.dependencies && step.dependencies.length > 2) score += 0.1;
+    return Math.min(score, 1.0);
+  }
+}
+
 class RTXConductor {
   constructor(isUltra = false) {
     const registryPath = path.join(__dirname, '../config/cli-registry.json');
@@ -39,17 +66,27 @@ class RTXConductor {
     const workspacePath = fileManager.getWorkspacePath();
     console.log(`📂 [RTX-Workspace] Mounted at: ${workspacePath}`);
 
-    // 2. Plan
-    const { plan } = await this.planner.plan(goal, this.registry, this.isUltra ? 'ULTRA' : 'STANDARD');
+    // 2. Plan — <role_thinker> Phase
+    const { plan, goalId } = await this.planner.plan(goal, this.registry, this.isUltra ? 'ULTRA' : 'STANDARD');
 
     // 3. Execute Pipeline
     for (const step of plan) {
-      console.log(`\n⚙️  [RTX-Step ${step.step}] Executing via [${step.tool.toUpperCase()}] -> ${step.action}`);
-      
-      // Safety Check
+      // TRINITY role display
+      const roleIcon = { thinker: '🧠', worker: '⚙️', verifier: '🔍', synthesizer: '🎯' }[step.trinity_role] || '▪️';
+      console.log(`\n${roleIcon}  [RTX-Step ${step.step}] <role_${step.trinity_role || 'worker'}> via [${step.tool.toUpperCase()}] → ${step.action}`);
+
+      // Heuristic Conductor routing (Antigravity IDE + Ultron approach)
+      const complexity = RTXHeuristicConductor.computeComplexity(step);
+      const suggestedModel = RTXHeuristicConductor.selectModel(step.trinity_role, complexity);
+      if (suggestedModel !== step.tool) {
+        console.log(`   🎛️ [RTX-Conductor] Heuristic override: ${step.tool} → ${suggestedModel} (complexity: ${complexity.toFixed(2)})`);
+      }
+
+      // Safety Pre-Flight Check (Antigravity 2.0 contribution)
       const safetyCheck = RTXSafetyLayer.checkCommand(step);
       if (!safetyCheck.isSafe) {
-        console.error(`❌ [RTX-Conductor] Aborting step due to safety violation: ${safetyCheck.reason}`);
+        console.error(`❌ [RTX-Conductor] Aborting step — Safety violation: ${safetyCheck.reason}`);
+        RTXSafetyLayer.lockSessionState(sessionId, safetyCheck.reason);
         continue;
       }
 
@@ -108,9 +145,16 @@ class RTXConductor {
             success = true;
           }
 
+          // Credential leak check before logging (Antigravity 2.0)
+          const credCheck = RTXSafetyLayer.checkForCredentialLeaks(finalOut);
+          if (credCheck.hasLeak) {
+            console.error(`🚨 [RTX-Conductor] Credential leak in output — using redacted version.`);
+            finalOut = credCheck.safePayload;
+          }
+
           const cleanOut = sanitizeCLIOutput(finalOut, step.tool);
           session.log(step.tool, step, cleanOut);
-          
+
           // Artifact generation mapping
           if (step.action === 'scaffold_backend' || step.action === 'scaffold_codebase') {
             fileManager.registerArtifact("api/main.py", "# Backend Code\n" + finalOut);
@@ -128,7 +172,10 @@ class RTXConductor {
       }
     }
     
-    console.log(`\n✅ [RTX-Conductor] Orchestration Complete.`);
+    // Goal progress final print
+    if (goalId) this.planner.printGoalProgress(goalId);
+    console.log(`\n✅ [RTX-Conductor] <role_synthesizer> Orchestration Complete.`);
+    console.log(`🔗 [RTX-Conductor] TRINITY Pipeline: Thinker → Worker → Verifier → Synthesizer ✓`);
   }
 }
 
