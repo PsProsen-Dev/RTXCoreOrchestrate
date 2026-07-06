@@ -1,0 +1,23 @@
+{
+  "claude_code": {
+    "cmd": "claude",
+    "type": "llm_coder",
+    "capabilities": ["plan_tasks", "edit_code", "run_shell"],
+    "input_format": "prompt",
+    "output_format": "markdown+code"
+  },
+  "gh_cli": {
+    "cmd": "gh",
+    "type": "vcs",
+    "capabilities": ["create_repo", "pr_open", "issue_manage"],
+    "input_format": "args",
+    "output_format": "plain_text"
+  },
+  "copilot_cli": {
+    "cmd": "gh copilot",
+    "type": "llm_coder",
+    "capabilities": ["code_suggest", "tests", "refactor"],
+    "input_format": "prompt",
+    "output_format": "markdown"
+  }
+}
