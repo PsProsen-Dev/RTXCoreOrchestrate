@@ -69,6 +69,9 @@ class RTXConductor {
     // 2. Plan — <role_thinker> Phase
     const { plan, goalId } = await this.planner.plan(goal, this.registry, this.isUltra ? 'ULTRA' : 'STANDARD');
 
+    // Initialize session state for tracking progress & crash recovery
+    await session.init(goalId, plan);
+
     // 3. Execute Pipeline
     for (const step of plan) {
       // TRINITY role display
@@ -173,7 +176,8 @@ class RTXConductor {
     }
     
     // Goal progress final print
-    if (goalId) this.planner.printGoalProgress(goalId);
+    session.complete('COMPLETED');
+    if (goalId) this.planner.printGoalProgress(goalId, session);
     console.log(`\n✅ [RTX-Conductor] <role_synthesizer> Orchestration Complete.`);
     console.log(`🔗 [RTX-Conductor] TRINITY Pipeline: Thinker → Worker → Verifier → Synthesizer ✓`);
   }

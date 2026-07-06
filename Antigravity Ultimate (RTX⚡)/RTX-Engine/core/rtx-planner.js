@@ -54,11 +54,20 @@ class RTXPlanner {
   /**
    * Prints current goal progress — Antigravity 2.0 contribution.
    */
-  printGoalProgress(goalId) {
+  printGoalProgress(goalId, session = null) {
     const entry = goalRegistry.get(goalId);
     if (!entry) return;
-    const done = entry.subtasks.filter(s => s.status === 'COMPLETED').length;
-    console.log(`📊 [RTX-Planner] Goal: "${entry.description}" | Progress: ${done}/${entry.subtasks.length} subtasks | Status: ${entry.status}`);
+    
+    let steps = entry.subtasks;
+    let status = entry.status;
+    
+    if (session && session.state) {
+      steps = session.state.steps;
+      status = session.state.status;
+    }
+
+    const done = steps.filter(s => s.status === 'PASSED' || s.status === 'COMPLETED').length;
+    console.log(`📊 [RTX-Planner] Goal: "${entry.description}" | Progress: ${done}/${steps.length} subtasks | Status: ${status}`);
   }
 
   // ─── ROLE: <role_thinker> — Goal Decomposition (Fugu-Style) ──────────────────
