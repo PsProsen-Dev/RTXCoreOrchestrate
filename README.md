@@ -14,7 +14,7 @@
 Coordinates multiple frontier LLMs through a unified terminal interface —  
 inspired by Sakana AI's Fugu Ultra multi-agent architecture and Marlin strategic research methodology.
 
-**By [Prosenjit Paul (PsProsen-Dev)](https://github.com/PsProsen-Dev)**
+**By [Prosenjit Paul (aka Prosen)](https://github.com/PsProsen-Dev)**
 
 </div>
 
@@ -237,7 +237,7 @@ MIT License — Free to use, modify, and distribute with attribution to the orig
 
 <div align="center">
 
-**Built with ⚡ by [Prosenjit Paul (PsProsen-Dev)](https://github.com/PsProsen-Dev)**
+**Built with ⚡ by [Prosenjit Paul (aka Prosen)](https://github.com/PsProsen-Dev)**
 
 *"Reasoning. Thinking. Xtreme."*
 
