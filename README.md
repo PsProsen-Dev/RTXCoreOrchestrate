@@ -29,8 +29,8 @@ It ships two core components:
 | Component | File | Purpose |
 |-----------|------|---------|
 | **RTX Framework** | `RTXCoreOrchestrate/RTXCoreFramework.md` | Universal AI system prompt — calibrates any LLM |
-| **RTX Engine** | `RTXCoreOrchestrate/RTX-Engine/` | Node.js orchestration core — runs real CLI pipelines |
-| **Mini Conductor** | `RTXCoreOrchestrate/mini_fugu_conductor.py` | Lightweight Python Fugu-style task orchestrator |
+| **RTX Engine** | `Antigravity Ultimate (RTX⚡)/RTX-Engine/` | Node.js orchestration core — runs registered CLIs live, documented mock fallback when a CLI is missing |
+| **Mini Conductor** | `Antigravity 2.0 (RTX⚡)/mini_fugu_conductor.py` | Lightweight Python Fugu-style task orchestrator |
 
 ---
 
@@ -139,7 +139,7 @@ Inspired by **Sakana AI's Fugu Ultra**, the engine dispatches subtasks to specia
 ```bash
 # Clone the repository
 git clone https://github.com/PsProsen-Dev/RTXCoreOrchestrate.git
-cd RTXCoreOrchestrate/RTXCoreOrchestrate/RTX-Engine
+cd RTXCoreOrchestrate/"Antigravity Ultimate (RTX⚡)"/RTX-Engine
 
 # Run system health check
 node scripts/health-check.js
@@ -231,7 +231,7 @@ Marlin-style research reports follow a strict **3-layer analytical structure**:
 
 ## 📝 License
 
-MIT License — Free to use, modify, and distribute with attribution to the original author.
+MIT License — Free to use, modify, and distribute with attribution to the original author. See [LICENSE](LICENSE).
 
 ---
 

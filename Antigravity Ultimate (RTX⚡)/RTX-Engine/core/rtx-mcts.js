@@ -51,3 +51,40 @@ class RTXMCTS {
 }
 
 module.exports = RTXMCTS;
+
+// ─── CLI Entry Point (P0 fix: README documents `rtx-mcts.js --depth/--width`,
+// which previously had no entry point and silently did nothing) ──────────────
+if (require.main === module) {
+  const rawArgs = process.argv.slice(2);
+  let depth = 1, width = 3;
+  const positional = [];
+
+  for (let i = 0; i < rawArgs.length; i++) {
+    const a = rawArgs[i];
+    if ((a === '--depth' || a === '--width') && rawArgs[i + 1]) {
+      const n = parseInt(rawArgs[++i], 10);
+      if (a === '--depth') depth = Number.isFinite(n) && n > 0 ? n : 1;
+      else width = Number.isFinite(n) && n > 0 ? n : 3;
+    } else if (!a.startsWith('--')) {
+      positional.push(a);
+    } else {
+      console.error(`⚠️  [RTX-MCTS] Unknown flag "${a}" — ignoring.`);
+    }
+  }
+
+  const query = positional.join(' ') || 'Evaluate options';
+
+  (async () => {
+    const mcts = new RTXMCTS();
+    let focus = query;
+    for (let d = 1; d <= depth; d++) {
+      if (depth > 1) console.log(`\n━━━ Depth ${d}/${depth} ━━━`);
+      const best = await mcts.search(focus, width);
+      // Go deeper: next round refines around the winning branch.
+      focus = `Refine: ${best.desc}`;
+    }
+  })().catch(err => {
+    console.error('❌ [RTX-MCTS]', err);
+    process.exit(1);
+  });
+}
