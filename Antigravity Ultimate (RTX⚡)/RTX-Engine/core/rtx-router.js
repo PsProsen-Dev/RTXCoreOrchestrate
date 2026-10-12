@@ -16,21 +16,40 @@
  * RTXCoreFramework Section 8.3 — Model Selection Head
  */
 
-// ─── Legacy Pattern Routing Map (preserved for backward compat) ──────────────
+const fs = require('fs');
+const path = require('path');
+
+// ─── Registry-Only Routing (P0 fix) ──────────────────────────────────────────
+// The router may ONLY route to CLIs that exist in config/cli-registry.json.
+// Legacy ids ('gemini-cli', 'marlin') are not registered — routing to them used
+// to make the conductor crash in getAdapter(). Now they are impossible.
+let _registryCliIds = ['claude_code', 'gh_cli', 'copilot_cli']; // safe default
+try {
+  const registryPath = path.join(__dirname, '../config/cli-registry.json');
+  _registryCliIds = Object.keys(JSON.parse(fs.readFileSync(registryPath, 'utf-8')));
+} catch (err) {
+  console.warn(`⚠️  [RTX-Router] Could not load cli-registry.json (${err.message}) — using default CLI set.`);
+}
+const ALLOWED_CLIS = new Set(_registryCliIds);
+
+// ─── Legacy Pattern Routing Map (registry-only targets) ─────────────────────
 const ROUTING_MAP = {
   'git|repo|pr|issue|release|branch': 'gh_cli',
   'review|explain|refactor|debug':    'copilot_cli',
-  'image|vision|creative|design':     'gemini-cli',
+  // Research/web/vision/design tasks have no dedicated CLI in the registry —
+  // claude_code is the registry's general-purpose LLM worker, so they land here.
+  'image|vision|creative|design':     'claude_code',
   'generate|scaffold|boilerplate':    'claude_code',
   'translate|math|chinese':           'claude_code',
-  'search|web|research':              'gemini-cli',
+  'search|web|research':              'claude_code',
 };
 
 // ─── Adaptive History Multiplier (Ultron's contribution) ─────────────────────
 // Tracks failure counts per model — adjusts selection weights dynamically.
+// Keys are restricted to registry CLIs (P0 fix — legacy 'gemini-cli' removed).
 const _historyState = {
-  failCounts: { claude_code: 0, 'gemini-cli': 0, copilot_cli: 0, gh_cli: 0, marlin: 0 },
-  successCounts: { claude_code: 0, 'gemini-cli': 0, copilot_cli: 0, gh_cli: 0, marlin: 0 },
+  failCounts: { claude_code: 0, copilot_cli: 0, gh_cli: 0 },
+  successCounts: { claude_code: 0, copilot_cli: 0, gh_cli: 0 },
 };
 
 /**
@@ -104,14 +123,18 @@ function extractFeatureVector(taskDescription) {
  * Returns routing decision in both STANDARD and ULTRA modes.
  */
 function selectModelFromVector(h, mode = 'ULTRA') {
-  // Base scores per model from feature dimensions
+  // Base scores per model from feature dimensions.
+  // P0 fix: scored models are exactly the registry CLIs — nothing else can win.
   const scores = {
-    'claude_code': (h.hasCode * 0.6) + (h.complexity * 0.4),
-    'gemini-cli':  (h.hasResearch * 0.7) + (h.isUrgent * 0.1) + (1 - h.hasCode) * 0.2,
+    'claude_code': (h.hasCode * 0.6) + (h.complexity * 0.4) + (h.hasResearch * 0.5),
     'copilot_cli': (h.hasCode * 0.4) + (0.3),
     'gh_cli':      (h.hasDeploy * 0.9) + (0.1),
-    'marlin':      (h.hasResearch * 0.5) + (h.complexity * 0.3) + (1 - h.isUrgent) * 0.2,
   };
+
+  // Unknown registry CLIs (future additions) participate with a flat base score.
+  for (const cliId of ALLOWED_CLIS) {
+    if (!(cliId in scores)) scores[cliId] = 0.2;
+  }
 
   // Apply Ultron's historyMultiplier — adaptive weight adjustment
   for (const model of Object.keys(scores)) {
@@ -151,15 +174,21 @@ function routeTask(taskDescription, mode = 'ULTRA') {
   const h = extractFeatureVector(taskDescription);
   const { model } = selectModelFromVector(h, mode);
 
-  // Legacy pattern override (for explicit git/repo tasks)
+  // Legacy pattern override (for explicit git/repo tasks) —
+  // only when the pattern target is a registered CLI.
   const desc = taskDescription.toLowerCase();
   for (const [pattern, cli] of Object.entries(ROUTING_MAP)) {
     if (new RegExp(pattern).test(desc)) {
-      // Only override if pattern match is more specific than vector result
-      if (cli === 'gh_cli' && h.hasDeploy > 0.5) return 'gh_cli';
+      if (ALLOWED_CLIS.has(cli)) return cli;
+      console.warn(`⚠️  [RTX-Router] Pattern "${pattern}" maps to unregistered CLI "${cli}" — ignoring.`);
     }
   }
 
+  // Final guard: never return a CLI that isn't in the registry.
+  if (!ALLOWED_CLIS.has(model)) {
+    console.warn(`⚠️  [RTX-Router] Selector picked unregistered CLI "${model}" — falling back to claude_code.`);
+    return ALLOWED_CLIS.has('claude_code') ? 'claude_code' : [...ALLOWED_CLIS][0];
+  }
   return model;
 }
 
