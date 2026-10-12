@@ -1,244 +1,119 @@
-<div align="center">
-
 # ⚡ RTXCoreOrchestrate
 
-### *Reasoning · Thinking · Xtreme*
+> **Honest status (13 Oct 2026):** Ye ek **CLI-first multi-agent orchestration prototype** hai — Sakana AI ke Fugu / Marlin / TRINITY ideas se inspired. Architecture ke building blocks real hain (real CLI spawning, real AB-MCTS, real safety tripwires), par **is environment mein koi LLM CLI installed nahi hai** — isliye LLM steps **documented mock fallback** par chalte hain. Jo kaam karta hai wo neeche clearly marked hai; jo limited hai wo [Current limitations](#-current-limitations-honest-list) mein.
+>
+> ⚠️ **License note:** `LICENSE` file mein MIT hai — **par license choice user confirmation pending hai.** Client/production use se pehle confirm karo.
 
-[![RTX Core](https://img.shields.io/badge/RTX⚡-Framework%20v2.0-7c3aed?style=for-the-badge)](https://github.com/PsProsen-Dev/RTXCoreOrchestrate)
-[![Fugu Ultra](https://img.shields.io/badge/Fugu-Ultra%20Edition-f97316?style=for-the-badge)](https://sakana.ai/fugu)
-[![Marlin](https://img.shields.io/badge/Marlin-Conductor-0d9488?style=for-the-badge)](https://sakana.ai/marlin)
-[![AB-MCTS](https://img.shields.io/badge/AB--MCTS-Enabled-16a34a?style=for-the-badge)](#)
-[![License](https://img.shields.io/badge/License-MIT-3b82f6?style=for-the-badge)](#license)
-
-**A modular, CLI-native AI orchestration engine built on the RTX⚡ Core Framework.**  
-Coordinates multiple frontier LLMs through a unified terminal interface —  
-inspired by Sakana AI's Fugu Ultra multi-agent architecture and Marlin strategic research methodology.
-
-**By [Prosenjit Paul (aka Prosen)](https://github.com/PsProsen-Dev)**
-
-</div>
+**By [Prosenjit Paul (aka Prosen)](https://github.com/PsProsen-Dev)** · Zero npm dependencies · Pure Node.js stdlib
 
 ---
 
-## 📌 What is RTXCoreOrchestrate?
+## Ye kya hai (3 lines, honestly)
 
-RTXCoreOrchestrate is a **CLI-first AI orchestration system** that turns your terminal into a multi-agent command center. It routes tasks across frontier LLMs (Claude, GPT, Gemini) using a custom planner → conductor → verifier pipeline — with zero GUI dependencies.
-
-It ships two core components:
-
-| Component | File | Purpose |
-|-----------|------|---------|
-| **RTX Framework** | `RTXCoreOrchestrate/RTXCoreFramework.md` | Universal AI system prompt — calibrates any LLM |
-| **RTX Engine** | `RTXCoreOrchestrate/RTX-Engine/` | Node.js orchestration core — runs real CLI pipelines |
-| **Mini Conductor** | `RTXCoreOrchestrate/mini_fugu_conductor.py` | Lightweight Python Fugu-style task orchestrator |
-
----
-
-## 🗂️ Repository Structure
-
-```
-RTXCoreOrchestrate/                        ← Root
-├── README.md
-└── RTXCoreOrchestrate/                    ← Main engine directory
-    ├── RTXCoreFramework.md                ← Master AI system prompt (RTX v2.0)
-    ├── mini_fugu_conductor.py             ← Python lightweight orchestrator
-    ├── fugu_scratchpads/                  ← Session state cache
-    └── RTX-Engine/                        ← Node.js orchestration core
-        ├── config/
-        │   └── cli-registry.json          ← Registered CLI tool definitions
-        ├── core/
-        │   ├── rtx-conductor.js           ← Main task conductor
-        │   ├── rtx-planner.js             ← AAS dynamic step planner
-        │   ├── rtx-router.js              ← Model routing (Standard / Ultra)
-        │   ├── rtx-mcts.js                ← AB-MCTS tree search engine
-        │   ├── marlin-conductor.js        ← Strategic research report generator
-        │   ├── rtx-verifier.js            ← Output quality auditor
-        │   ├── rtx-safety.js              ← Pre-flight security scanner
-        │   ├── rtx-session.js             ← Session state manager
-        │   ├── rtx-file-manager.js        ← Workspace file manager
-        │   ├── rtx-sanitizer.js           ← Input/output sanitizer
-        │   ├── rtx-cli-bridge.js          ← CLI process bridge layer
-        │   └── adapters/
-        │       ├── BaseAdapter.js         ← Abstract adapter interface
-        │       ├── ClaudeAdapter.js       ← Anthropic Claude CLI adapter
-        │       └── GhAdapter.js           ← GitHub CLI adapter
-        ├── scripts/
-        │   └── health-check.js            ← System health diagnostics
-        └── workspaces/                    ← Auto-generated session outputs
-```
-
----
-
-## 🧠 RTXCoreFramework.md — The Master AI Prompt
-
-The **RTX⚡ Core Framework** is a universal system prompt that calibrates any AI agent into a high-performance assistant. Works with Claude, GPT, Gemini, Codex, Cursor, Antigravity, and any LLM that accepts a system prompt.
-
-**Core Protocol (RTX):**
-
-| Letter | Meaning | Role |
-|--------|---------|------|
-| **R** | Reasoning | Logic verification, problem decomposition, intent understanding |
-| **T** | Thinking | Self-assessment, learning, continuous refinement |
-| **X** | Xtreme | Action-oriented execution, maximum speed and output quality |
-
-**How to use:**
-> Copy the full contents of `RTXCoreOrchestrate/RTXCoreFramework.md` and paste it as a **System Prompt** or **Custom Instructions** in any AI tool.
-
-On first load, the agent runs the **First-Boot Protocol** — asking 3 sequential questions (mother tongue, agent name, addressal preference) to permanently configure its behavior.
-
----
-
-## ⚙️ RTX-Engine — Orchestration Pipeline
-
-Inspired by **Sakana AI's Fugu Ultra**, the engine dispatches subtasks to specialized CLI workers using a multi-stage pipeline:
-
-```
-                    ┌─────────────┐
-     User Prompt ──►│  rtx-router │ ◄── Selects: Standard / Ultra mode
-                    └──────┬──────┘
-                           │
-                    ┌──────▼──────┐
-                    │ rtx-planner │ ◄── AAS: Generates dynamic step plan
-                    └──────┬──────┘
-                           │
-                    ┌──────▼────────┐
-                    │ rtx-conductor │ ◄── Dispatches to CLI workers
-                    └──┬────────┬───┘
-                       │        │
-              ┌─────────▼─┐  ┌──▼──────────┐
-              │ Candidate A│  │ Candidate B  │  ◄── Parallel generation
-              │  (Claude)  │  │  (GH/Other) │
-              └─────────┬──┘  └──┬──────────┘
-                        │        │
-                    ┌───▼────────▼───┐
-                    │   rtx-mcts     │ ◄── AB-MCTS: Selects best candidate
-                    └───────┬────────┘
-                            │
-                    ┌───────▼────────┐
-                    │  rtx-verifier  │ ◄── Quality audit + reflection loop
-                    └───────┬────────┘
-                            │
-                       Final Output ✅
-```
+1. Ek **CLI-first multi-agent orchestration prototype** — ek user goal andar jata hai, planner steps banata hai, conductor unhe CLI workers (Claude Code, GitHub CLI, Copilot CLI) par chalata hai, verifier quality check karta hai.
+2. Conductor ab **real `adapter.run()`** se CLIs spawn karta hai (30s timeout, argv-only execution); CLI binary missing ho to **documented mock fallback** (`🧪`) milta hai — output mein hamesha visible rehta hai ki mock tha ya real.
+3. Search/selection real hai: **AB-MCTS** (UCB1, adaptive wider/deeper branching, backprop), **TRINITY turn-loop** (worker → verifier → revise), **safety tripwires** har adapter call par — par scoring **deterministic rubric** par chalti hai; LLM-as-judge optional hai aur abhi unconfigured.
 
 ---
 
 ## 🚀 Quick Start
 
+Har command neeche 13 Oct 2026 ko **khud chalakar verify** kiya gaya hai. Folder names mein spaces + emoji hain — path quotes mein lo.
+
 ### Prerequisites
 
-| Tool | Version | Install |
-|------|---------|---------|
-| Node.js | v18+ | [nodejs.org](https://nodejs.org) |
-| Python | 3.10+ | [python.org](https://python.org) |
-| Claude CLI | Latest | `npm install -g @anthropic-ai/claude-code` |
-| GitHub CLI | Latest | [cli.github.com](https://cli.github.com) |
+| Tool | Zaroori? | Note |
+|------|----------|------|
+| Node.js v18+ | ✅ Yes | Sirf yehi required hai (tested: v24.20.0) |
+| `gh` CLI | ⚠️ Optional | Missing → uske steps mock fallback par |
+| `claude` CLI | ⚠️ Optional | Missing → mock fallback par (is env mein missing) |
+| `github-copilot-cli` | ⚠️ Optional | Missing → mock fallback par (is env mein missing) |
+| Python 3.10+ | ⚠️ Optional | Sirf `mini_fugu_conductor.py` POC ke liye |
 
 ### Setup
 
 ```bash
 # Clone the repository
 git clone https://github.com/PsProsen-Dev/RTXCoreOrchestrate.git
-cd RTXCoreOrchestrate/RTXCoreOrchestrate/RTX-Engine
+cd RTXCoreOrchestrate
 
-# Run system health check
+# Engine directory (note the quotes — spaces + emoji in folder names)
+cd "Antigravity Ultimate (RTX⚡)"/RTX-Engine
+
+# System health check — kaunsi CLI real chalegi, kaunsi mock par
 node scripts/health-check.js
 ```
 
----
+Expected output (is env mein):
 
-## 💡 Usage Examples
+```
+  ⚠️   [claude_code   ] claude                   NOT FOUND → mock mode
+  ✅  [gh_cli        ] gh                       gh version 2.102.0
+  ⚠️   [copilot_cli   ] github-copilot-cli       NOT FOUND → mock mode
+  ✅  [node          ] node                     v24.20.0
+  ✅  [git           ] git                      git version 2.43.0
 
-### Fugu-Ultra Mode — AI Code Generation
-```bash
-node core/rtx-conductor.js --ultra "Build a FastAPI backend with JWT authentication"
+✅ [RTX-HealthCheck] All REQUIRED binaries present. Engine is go! 🚀
+🧪 [RTX-HealthCheck] Mock mode CLIs: [claude_code, copilot_cli]
 ```
 
-### Marlin Mode — Strategic Research Report
+### Chalao (examples)
+
 ```bash
-node core/marlin-conductor.js "Assess geopolitical impact of Strait of Hormuz blockade"
+# Standard pipeline: planner → conductor → verifier → session
+node core/rtx-conductor.js "Build a FastAPI backend with JWT authentication"
+
+# ULTRA mode: parallel candidate racing + verifier best-selection + zyada turn budget
+node core/rtx-conductor.js --ultra "Create a hello world REST API"
+
+# AB-MCTS standalone: real tree search (koi API key nahi chahiye — rubric scoring)
+node core/rtx-mcts.js --depth 2 --width 3 --budget 12 "Best architecture for a real-time trading system"
+
+# Marlin: 3-layer research report apne notes/sources se
+RTX_MARLIN_SOURCES=/path/to/your/notes node core/marlin-conductor.js "Your research question"
+
+# Repo root se: eval harness (target ABSOLUTE path hona chahiye — relative path fail hota hai)
+cd ../..   # wapas repo root par
+node eval/rtx-eval.js --target "$PWD" --out /tmp/eval-results.json
+
+# Smoke tests (repo root se; zero-dep, plain node:assert)
+node test/smoke-mcts.js
+node test/smoke-router.js
+node test/smoke-safety.js
+node test/smoke-verifier.js
+node test/smoke-planner.js
 ```
 
-### AB-MCTS Mode — Decision Tree Analysis
-```bash
-node core/rtx-mcts.js --depth 3 --width 2 "Best architecture for a real-time trading system"
-```
+---
 
-### Python Mini Conductor — Lightweight Tasks
-```bash
-cd ../
-python mini_fugu_conductor.py "Summarize and compare these two research papers"
-```
+## 🖥️ CLI reference (har entry point jo actually exist karta hai)
+
+| Entry point | Command | Kya karta hai (verified) |
+|---|---|---|
+| Main pipeline | `node core/rtx-conductor.js [--ultra] "<goal>"` | Plan → per-step TRINITY turn-loop (worker→verifier→revise, budget 2 standard / 4 ultra) → real `adapter.run()` spawn ya documented mock → credential check → sanitize → session log → `COMPLETED ✅` |
+| ULTRA racing | (upar wala, `--ultra` flag) | `requires_mcts` steps par real AB-MCTS search (budget 8, worker pool = step.tool + fallback chain); hard non-MCTS steps par **parallel candidate racing** (`Promise.all` across router fallback chain, verifier winner chunta hai) |
+| Research reports | `node core/marlin-conductor.js "<goal>"` | 5 stages: evidence gather (`RTX_MARLIN_SOURCES` dir / `RTX_MARLIN_NOTES` file / optional `queryAdapter`) → hypotheses → real ContradictionTracker → real AB-MCTS → **3-layer report** (Verified Facts / Working Assumptions / Inferences), har line source-linked |
+| Standalone search | `node core/rtx-mcts.js --depth N --width M --budget K "<query>"` | Real AB-MCTS: tree nodes, UCB1 (c=1.414) selection, adaptive GO WIDER / GO DEEPER, backprop, `topK()` best-first. Defaults: `--depth 1 --width 3 --budget 12`. Bina LLM ke chalta hai — deterministic rubric scoring |
+| Health diagnostics | `node scripts/health-check.js` | 5 CLIs scan karta hai (`claude`, `gh`, `github-copilot-cli`, `node`, `git`), `health-report.json` likhta hai, missing CLIs ko mock mode declare karta hai |
+| Eval harness | `node eval/rtx-eval.js --target <ABSOLUTE path> [--golden eval/golden-tasks.json] [--out results.json]` | Golden tasks ko **actual engine modules** se chala kar behaviour score karta hai. Honesty rule: jo measure nahi hua wo "unevaluated" report hota hai, kabhi 0 nahi. ⚠️ `--target` relative path (`.`) par **fail hota hai** (exit 1) — absolute path use karo |
+| Smoke tests | `node test/smoke-{mcts,router,safety,verifier,planner}.js` | Zero-dep assertions har core module par — sab exit 0 (verified 13 Oct 2026) |
+| Python POC | `python3 "Antigravity 2.0 (RTX⚡)"/mini_fugu_conductor.py "<task>"` | Lightweight Fugu-style orchestrator **POC — sirf echo-based mocks**, real execution nahi. argv-based execution (`shell=True` injection fix landed) |
+
+**Run karne ki jagah:** engine commands `Antigravity Ultimate (RTX⚡)/RTX-Engine/` ke andar se; `eval/` aur `test/` repo root se.
+
+### Registered CLIs (routing targets)
+
+`config/cli-registry.json` mein **sirf 3** CLIs hain — router inhi par route karta hai, inke bahar kuch nahi:
+
+| ID | Binary | Type |
+|---|---|---|
+| `claude_code` | `claude` | LLM coder |
+| `gh_cli` | `gh` | VCS (repo/PR/deploy) |
+| `copilot_cli` | `gh copilot` | LLM coder |
+
+> Note: GPT / Gemini registry mein **nahin** hain. README ke purane "Claude, GPT, Gemini" claim ko hata diya gaya hai.
 
 ---
 
-## 🗺️ Marlin Intelligence Architecture
-
-Marlin-style research reports follow a strict **3-layer analytical structure**:
-
-| Layer | Label | Description |
-|-------|-------|-------------|
-| ✅ **Layer 1** | Verified Facts | Hard data cross-referenced with citations |
-| 🔶 **Layer 2** | Working Assumptions | Unverified but plausible inputs |
-| 💡 **Layer 3** | Analyst Inferences | Reasoned conclusions drawn from above |
-
-**Monitoring Horizon Tiers:**
-
-| Tier | Window | Focus |
-|------|--------|-------|
-| Tier 1 | 0–6 months | Immediate leading indicators |
-| Tier 2 | 0–12 months | Medium-term developments |
-| Tier 3 | 6–36 months | Long-term structural shifts |
-
----
-
-## 🛡️ Security
-
-- **Pre-flight payload scanning** on all shell commands before execution
-- **Credential filtering** — no AWS/GCP/SSH keys leaked to CLI APIs
-- **Input validation** on agent names and all prompt arguments
-- **License auditing** on injected boilerplate dependencies
-- Full security policy documented in `RTXCoreFramework.md` — Section 14
-
----
-
-## 📚 References & Fugu Research
-
-### Technical Papers
-- [Sakana Fugu Technical Report](https://arxiv.org/abs/2606.21228) - Multi-Agent System as a Model
-- [TRINITY Paper](https://arxiv.org/abs/2512.04695) - Evolved Model Coordination
-- [Conductor Paper](https://arxiv.org/abs/2512.04388) - RL-Trained Orchestrator
-
-### Official Resources
-- [Sakana Fugu Official Page](https://sakana.ai/fugu)
-- [Sakana AI Blog](https://sakana.ai/blog/)
-- [Marlin Strategic Intelligence](https://sakana.ai/marlin)
-- [AB-MCTS](https://sakana.ai/ab-mcts)
-
-### Tech Blogs & Articles
-- [VentureBeat: Fugu Launch](https://venturebeat.com/orchestration/no-claude-fable-5-no-problem-sakana-achieves-frontier-performance-with-new-fugu-multi-model-auto-synthesis-system)
-- [AyAutomate: What is Sakana Fugu?](https://www.ayautomate.com/blog/what-is-sakana-fugu)
-- [MarkTechPost: Fugu Orchestration Model](https://www.marktechpost.com/2026/06/22/sakana-ai-launches-sakana-fugu-an-orchestration-model-that-routes-tasks-across-a-swappable-pool-of-frontier-llms)
-- [MindStudio: Multi-Agent AI System](https://www.mindstudio.ai/blog/what-is-sakana-fugu-multi-agent-ai)
-- [Paddo.dev: Critical Analysis of Fugu](https://paddo.dev/blog/sakana-fugu-orchestration-model)
-
-### Community Discussions
-- [Reddit: r/ClaudeAI on Fugu](https://www.reddit.com/r/ClaudeAI/comments/1ud87za/sakana_ais_fugu_from_a_claude_users_view)
-- [LinkedIn: Fugu Release Discussion](https://www.linkedin.com/posts/robert-tjarko-lange-19539a12a_stoked-for-sakana-ai-fugu-model-release-activity-7474763421641723904-wUOb)
-- [X: Fugu Ultra Benchmarks](https://x.com/rohanpaul_ai/status/2068909919873757456)
-
----
-
-## 📝 License
-
-MIT License — Free to use, modify, and distribute with attribution to the original author.
-
----
-
-<div align="center">
-
-**Built with ⚡ by [Prosenjit Paul (aka Prosen)](https://github.com/PsProsen-Dev)**
-
-*"Reasoning. Thinking. Xtreme."*
-
-</div>
+## ✅ Kya actually kaam karta hai (verified list, 13 Oct 202
+...[truncated 8553 chars]

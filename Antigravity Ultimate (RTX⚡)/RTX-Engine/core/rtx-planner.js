@@ -196,6 +196,20 @@ class RTXPlanner {
       dependencies: steps.map(s => s.action),
     });
 
+    // ── Conductor paper (ICLR 2026): plan-as-data — access_list topology ─────
+    // The coordinator's output is DATA, not prose: three aligned lists —
+    // worker_ids, natural-language subtasks, access_list (which prior steps
+    // each step may read). [] = fresh context, [0,1] = selective read.
+    // Derived here from the dependency action-names → 0-based step indices.
+    const actionToIndex = new Map();
+    steps.forEach((s, i) => actionToIndex.set(s.action, i));
+    for (let i = 0; i < steps.length; i++) {
+      const deps = steps[i].dependencies || [];
+      steps[i].access = deps
+        .map(d => actionToIndex.get(d))
+        .filter(idx => Number.isInteger(idx) && idx < i);
+    }
+
     // Register subtasks in goal registry
     const goalEntry = goalRegistry.get(goalId);
     goalEntry.subtasks = steps.map(s => ({ action: s.action, role: s.trinity_role, status: 'PENDING' }));
@@ -208,6 +222,22 @@ class RTXPlanner {
     });
 
     return { plan: steps, goalId };
+  }
+
+  /**
+   * Emits the plan as Conductor-paper data: three aligned lists —
+   * worker_ids / subtasks / access_list — instead of prose.
+   * Explicit topology: debuggable, serializable into the session.
+   * (RL training skipped — handcrafted templates for now; the format is
+   * forward-compatible with a learned planner later.)
+   */
+  emitPlanJSON(plan, goalId) {
+    return {
+      goal_id: goalId,
+      worker_ids: plan.map(s => s.tool),
+      subtasks: plan.map(s => `${s.action}: ${s.details}`),
+      access_list: plan.map(s => s.access || []),
+    };
   }
 }
 

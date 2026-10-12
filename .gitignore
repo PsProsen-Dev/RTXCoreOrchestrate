@@ -1,0 +1,19 @@
+# ─── RTXCoreOrchestrate .gitignore ────────────────────────────────────────────
+# Runtime junk: workspaces, session state, health reports, scratchpads.
+# (Historical junk stays committed — this only blocks future noise.)
+
+# Per-run session workspaces & state
+**/workspaces/
+**/*.state.json
+**/health-report.json
+**/fugu_scratchpads/
+
+# Dependencies & OS clutter
+node_modules/
+.DS_Store
+*.log
+
+# Editors
+.vscode/
+.idea/
+*.swp
