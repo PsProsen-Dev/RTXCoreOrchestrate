@@ -10,6 +10,7 @@ const { sanitizeCLIOutput } = require('./rtx-sanitizer');
 const BaseAdapter = require('./adapters/BaseAdapter');
 const ClaudeAdapter = require('./adapters/ClaudeAdapter');
 const GhAdapter = require('./adapters/GhAdapter');
+const { isAvailable } = require('../scripts/health-check');
 
 /**
  * RTXConductor Heuristic Router — Fugu-style model selection.
@@ -46,13 +47,33 @@ class RTXConductor {
     this.isUltra = isUltra;
   }
 
+  /**
+   * Returns a live adapter for the given registry tool.
+   *
+   * P0 fix: the adapter is WIRE-UP, not decorative.
+   * - Health-check decides mockMode via the adapter's built-in graceful-fallback
+   *   pattern (BaseAdapter.run → _mockRun when the binary is missing).
+   * - Unknown tool ids (e.g. legacy router ids not in the registry) no longer
+   *   throw — they log a warning and run the documented mock fallback.
+   */
   getAdapter(toolId) {
     const config = this.registry[toolId];
-    if (!config) throw new Error(`Unknown tool: ${toolId}`);
-    
-    if (toolId === 'claude_code') return new ClaudeAdapter(toolId, config);
-    if (toolId === 'gh_cli') return new GhAdapter(toolId, config);
-    return new BaseAdapter(toolId, config);
+    if (!config) {
+      console.warn(`   ⚠️  [RTX-Conductor] Unknown tool "${toolId}" — not in cli-registry.json. Using documented mock fallback.`);
+      const mock = new BaseAdapter(toolId, { cmd: 'rtx-unknown-tool', capabilities: [] });
+      mock.mockMode = true;
+      return mock;
+    }
+
+    let adapter;
+    if (toolId === 'claude_code') adapter = new ClaudeAdapter(toolId, config);
+    else if (toolId === 'gh_cli') adapter = new GhAdapter(toolId, config);
+    else adapter = new BaseAdapter(toolId, config);
+
+    // Wire health-check state into the adapter's existing fallback pattern:
+    // binary missing → adapter.run() returns the documented mock result.
+    adapter.mockMode = !isAvailable(toolId);
+    return adapter;
   }
 
   async processGoal(goal) {
@@ -71,6 +92,14 @@ class RTXConductor {
 
     // Initialize session state for tracking progress & crash recovery
     await session.init(goalId, plan);
+
+    // Execution honesty tracking:
+    // - usedMock: any step ran through the documented mock fallback
+    //   (CLI binary missing) — the "COMPLETED ✅" line may only print when
+    //   every step either really ran or used this documented fallback.
+    // - pipelineFailed: a step exhausted retries / crashed.
+    let usedMock = false;
+    let pipelineFailed = false;
 
     // 3. Execute Pipeline
     for (const step of plan) {
@@ -103,40 +132,54 @@ class RTXConductor {
         
         try {
           let finalOut = "";
+          const stepInput = { action: step.action, details: step.details };
 
-          // AB-MCTS Branching Execution
+          // AB-MCTS Branching Execution — REAL: both branches run their
+          // adapters' BaseAdapter.run() (spawn or documented mock fallback).
           if (this.isUltra && step.requires_mcts) {
             console.log(`🌲 [RTX-MCTS] Complexity High. Spawning AB-MCTS Parallel Branches...`);
-            
+
             // Branch 1: Primary Tool (e.g., claude_code)
             const adapter1 = this.getAdapter(step.tool);
-            console.log(`   > [Branch 1] Spawning subprocess via [${step.tool.toUpperCase()}]`);
-            let out1 = `SIMULATED_FAIL: Standard implementation by ${step.tool}`; // Mock failure to test selection
-            
+            console.log(`   > [Branch 1] Running via [${step.tool.toUpperCase()}]`);
+            const res1 = await adapter1.run(stepInput, { workspace: workspacePath });
+            if (res1.mock) { usedMock = true; console.log(`   🧪 [Branch 1] Mock fallback (CLI unavailable) — documented.`); }
+
             // Branch 2: Fallback Expert Tool (e.g., copilot_cli or gh_cli)
             const fallbackTool = step.tool === 'claude_code' ? 'copilot_cli' : 'claude_code';
-            console.log(`   > [Branch 2] Spawning alternative subprocess via [${fallbackTool.toUpperCase()}]`);
-            let out2 = `Advanced/Premium implementation with edge cases handled by ${fallbackTool}`; 
-            
-            // Verifier picks the best branch
-            const branches = [out1, out2];
+            const adapter2 = this.getAdapter(fallbackTool);
+            console.log(`   > [Branch 2] Running via [${fallbackTool.toUpperCase()}]`);
+            const res2 = await adapter2.run(stepInput, { workspace: workspacePath });
+            if (res2.mock) { usedMock = true; console.log(`   🧪 [Branch 2] Mock fallback (CLI unavailable) — documented.`); }
+
+            // Verifier picks the best branch (honest: scores real outputs)
+            const branches = [res1.out, res2.out];
             const bestIndex = await RTXVerifier.compareBranches(branches);
             finalOut = branches[bestIndex];
-            
+
             // Adopt winning branch context
             console.log(`🎯 [RTX-MCTS] Adopting context from Branch ${bestIndex + 1}.`);
             success = true;
           } else {
-            // Standard execution logic
+            // Standard execution — REAL: invokes adapter.run(), never a mock string.
             const adapter = this.getAdapter(step.tool);
-            console.log(`   > Subprocess spawned in workspace...`);
-            
-            let mockOut = "Success output for " + step.action;
-            if (step.triggerUltraMock && attempt === 1 && this.isUltra) {
-              mockOut = "SIMULATED_FAIL: Missing error handling";
+            console.log(`   > Running [${step.tool.toUpperCase()}] on workspace...`);
+
+            const result = await adapter.run(stepInput, { workspace: workspacePath });
+            if (result.mock) {
+              usedMock = true;
+              console.log(`   🧪 [RTX-Conductor] Mock fallback (CLI "${step.tool}" unavailable) — documented.`);
             }
-            finalOut = mockOut;
-            
+            if (result.timedOut) {
+              throw new Error(`CLI "${step.tool}" timed out after ${adapter.timeoutMs / 1000}s`);
+            }
+            if (result.code !== 0) {
+              console.warn(`⚠️ [RTX-Conductor] CLI "${step.tool}" exited code ${result.code}: ${(result.err || '').substring(0, 160)}`);
+              finalOut = `ERROR(code=${result.code}): ${result.err || result.out}`.substring(0, 500);
+            } else {
+              finalOut = result.out;
+            }
+
             // Ultra Verification Layer
             if (this.isUltra) {
               const verification = await RTXVerifier.verify(step, finalOut);
@@ -145,7 +188,7 @@ class RTXConductor {
                 continue; // loop again
               }
             }
-            success = true;
+            success = result.code === 0;
           }
 
           // Credential leak check before logging (Antigravity 2.0)
@@ -171,14 +214,23 @@ class RTXConductor {
 
       if (!success) {
         console.error(`🚨 [RTX-Conductor] Step ${step.step} failed permanently after ${MAX_RETRIES} attempts.`);
+        pipelineFailed = true;
         break; // Stop pipeline
       }
     }
-    
-    // Goal progress final print
-    session.complete('COMPLETED');
+
+    // Goal progress final print — HONEST: "COMPLETED ✅" only when every step
+    // either ran for real or used the documented mock fallback.
+    session.complete(pipelineFailed ? 'FAILED' : 'COMPLETED');
     if (goalId) this.planner.printGoalProgress(goalId, session);
-    console.log(`\n✅ [RTX-Conductor] <role_synthesizer> Orchestration Complete.`);
+    if (pipelineFailed) {
+      console.log(`\n❌ [RTX-Conductor] Pipeline FAILED — one or more steps did not complete.`);
+    } else if (usedMock) {
+      console.log(`\n⚠️  [RTX-Conductor] <role_synthesizer> Orchestration completed with DOCUMENTED mock fallback (one or more CLIs unavailable).`);
+      console.log(`   💡 Run: node scripts/health-check.js — install the missing CLIs for live execution.`);
+    } else {
+      console.log(`\n✅ [RTX-Conductor] <role_synthesizer> Orchestration Complete.`);
+    }
     console.log(`🔗 [RTX-Conductor] TRINITY Pipeline: Thinker → Worker → Verifier → Synthesizer ✓`);
   }
 }
