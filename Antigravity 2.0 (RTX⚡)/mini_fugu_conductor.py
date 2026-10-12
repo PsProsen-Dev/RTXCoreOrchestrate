@@ -1,4 +1,5 @@
 import subprocess
+import shlex
 import os
 import json
 from pathlib import Path
@@ -32,17 +33,22 @@ class CLI_Swarm_Conductor:
             json.dump(state, f, indent=4)
         return str(self.state_file)
     
-    def run_cli_silent(self, command: str, role_name: str) -> str:
-        """Executes a CLI silently in the background (YOLO Mode)."""
+    def run_cli_silent(self, argv: list, role_name: str) -> str:
+        """Executes a CLI silently in the background (YOLO Mode).
+
+        P0 security fix: `argv` is a LIST, passed to subprocess with
+        shell=False — no shell parsing, so metacharacters in prompts or
+        goals cannot become shell syntax. Never pass a single string here
+        (that was the old shell=True injection surface).
+        """
         print(f"[Conductor] Routing to {role_name.upper()}...")
-        print(f"   > Internal Command: `{command}`")
+        print(f"   > Internal Command: `{' '.join(argv)}`")
         try:
-            # We use shell=True for this POC, capturing stdout/stderr silently.
             result = subprocess.run(
-                command, 
-                shell=True, 
-                capture_output=True, 
-                text=True, 
+                argv,
+                shell=False,
+                capture_output=True,
+                text=True,
                 check=True
             )
             return result.stdout.strip()
@@ -63,9 +69,10 @@ class CLI_Swarm_Conductor:
         # Build headless command for Thinker (Claude CLI)
         thinker_cli = self.registry["thinker"]
         # Mocking the actual cli call for the prototype
-        thinker_cmd = f"echo 'Plan: 1. Fetch data 2. Process data 3. Return JSON'" 
-        # In reality, it would be: f"{thinker_cli} --state-file {state_path}"
-        
+        # Mock headless call (prototype): argv list, never a shell string.
+        # In reality: shlex.split(f"{thinker_cli} -p <prompt>") as the argv list.
+        thinker_cmd = ["echo", "Plan: 1. Fetch data 2. Process data 3. Return JSON"]
+
         plan_output = self.run_cli_silent(thinker_cmd, "thinker")
         print(f"   [Thinker Output] -> {plan_output}\n")
 
@@ -78,8 +85,9 @@ class CLI_Swarm_Conductor:
         
         worker_cli = self.registry["worker_codegen"]
         # Mocking gh copilot suggest
-        worker_cmd = f"echo 'def process_data():\n    pass'" 
-        # In reality: f"{worker_cli} --state-file {state_path}"
+        # Mock headless call (prototype): argv list, never a shell string.
+        # In reality: shlex.split(f"{worker_cli} <args>") as the argv list.
+        worker_cmd = ["echo", "def process_data():\n    pass"]
 
         code_output = self.run_cli_silent(worker_cmd, "worker_codegen")
         
@@ -89,7 +97,7 @@ class CLI_Swarm_Conductor:
         if not code_output:
             print("Worker failed! Activating Backup Worker...")
             backup_cli = self.registry["worker_backup"]
-            backup_cmd = f"echo 'def process_data_backup():\n    pass'"
+            backup_cmd = ["echo", "def process_data_backup():\n    pass"]
             code_output = self.run_cli_silent(backup_cmd, "worker_backup")
 
         print(f"   [Worker Output] -> \n{code_output}\n")

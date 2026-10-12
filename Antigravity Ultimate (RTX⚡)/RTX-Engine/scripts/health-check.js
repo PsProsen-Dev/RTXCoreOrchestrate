@@ -12,7 +12,7 @@
  * Programmatic: const { checkAll } = require('./health-check'); await checkAll();
  */
 
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -59,14 +59,22 @@ const CLI_REGISTRY = [
 // ─── Single CLI Check ─────────────────────────────────────────────────────────
 
 function checkCLI(entry) {
+  // P0 security fix: argv-array spawn, no shell. Previously execSync() was fed a
+  // concatenated string; with shell:false that string was also misinterpreted
+  // as a single binary path (ENOENT) — real CLIs were wrongly reported missing.
   try {
-    const output = execSync(`${entry.cmd} ${entry.versionFlag} 2>&1`, {
+    const result = spawnSync(entry.cmd, [entry.versionFlag], {
       encoding: 'utf8',
       timeout: 5000,
-      shell: process.platform === 'win32' ? 'powershell.exe' : false,
       stdio: ['ignore', 'pipe', 'pipe'],
-    }).trim();
+    });
 
+    if (result.status !== 0) {
+      const msg = (result.stderr || result.error && result.error.message || 'exited non-zero').trim();
+      return { available: false, version: null, error: String(msg).substring(0, 200) };
+    }
+
+    const output = (result.stdout || '').trim();
     const version = output.split('\n')[0].trim();
     return { available: true, version, error: null };
   } catch (err) {
